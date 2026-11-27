@@ -1916,7 +1916,7 @@ function initHero() {
   const lshape = new T.Shape(); for (let k = 0; k <= 96; k++) { const ph = k / 96 * Math.PI * 2, r = polarR(ph) * 1.035; const v = new T.Vector2(Math.cos(ph) * r, Math.sin(ph) * r); k ? lshape.lineTo(v.x, v.y) : lshape.moveTo(v.x, v.y); }
   const liner = new T.Mesh(new T.ShapeGeometry(lshape), lin(new T.MeshStandardMaterial({color:0xE3E7EF, roughness:.8, transparent:true})));
   liner.position.set(.14, -.16, -.2); root.add(liner);
-  // die-cut opening: the label is printed on a white sheet, a blade traces its outline, the waste matrix peels away
+  // scroll die-cut: the label lands on a white sheet, a blade traces its outline, the waste sheet falls away
   const OUT = []; for (let k = 0; k <= 240; k++) { const ph = Math.PI * .62 - k / 240 * Math.PI * 2, r = polarR(ph) * 1.012; OUT.push(new T.Vector3(Math.cos(ph) * r, Math.sin(ph) * r, .036)); }
   const sheetPivot = new T.Group(); root.add(sheetPivot);
   const sheetMat = lin(new T.MeshStandardMaterial({color:0xF7F8FB, emissive:0xC9CBD0, roughness:.95, transparent:true, side:T.DoubleSide}));
@@ -1936,7 +1936,7 @@ function initHero() {
   blade.scale.setScalar(.6); blade.renderOrder = 5; root.add(blade);
   const TINTS = PS.map(p => { const c = new T.Color(p.tint); return [c.r * 255, c.g * 255, c.b * 255]; }), BASE = [247, 248, 251];
   const intro = $('#intro'), outro = $('#outro');
-  let cutK = null, orbit = {mob:0, Rx:1, Zb:1, Zf:0}, W = 1, H = 1, DPR = 1, keys = [], tT = 0, tC = 0, mx = 0, my = 0, match = null, home = null;
+  let cutK = null, W = 1, H = 1, DPR = 1, keys = [], tT = 0, tC = 0, mx = 0, my = 0, match = null, home = null;
   const V = (x, y, z) => new T.Vector3(x, y, z);
   function place(cx, cy, wF, hF) {
     const asp = W / H, D = Math.max(5.6 * 1.06 / (wF * asp * tf), 3.86 * 1.12 / (hF * tf)), vh = D * tf, vw = vh * asp;
@@ -1951,14 +1951,10 @@ function initHero() {
     match = {p:V(lx, ly, D), l:V(lx, ly, 0)};
     const over = {p:V(0, 0, Math.max(home.p.z, 11) * 1.6), l:V(0, 0, 0)};
     const foc = shards.map(sh => { const F = sh.target.clone(), D2 = mob ? 13 : 9.6, vis = D2 * Math.tan(16 * Math.PI / 180); const sx = mob ? 0 : vis * asp * .02, sy = mob ? -vis * .05 : 0; return {p:V(F.x + sx, F.y + sy + .5, F.z + D2), l:V(F.x + sx, F.y + sy, F.z)}; });
-    keys = [{t:0, k:home}, {t:TT, k:home}];
-    // opening framing: the sheet fills the screen with the label centred
+    // scroll: camera centres on the label for the die-cut, then hands it back to the right
     const Dc = Math.max(5.6 * 1.06 / ((mob ? .8 : .56) * asp * tf), 3.86 * 1.06 / ((mob ? .42 : .62) * tf)), vhC = Dc * tf;
     cutK = {p:V(0, 0, Dc), l:V(0, 0, 0)}; buildSheet(vhC * asp * 1.6, vhC * 1.6);
-    // wrap path: the whole label circles a vertical axis, passing behind the page and sweeping back across the front
-    const vwh = home.p.z * tf * asp;
-    if (mob) orbit = {mob:1, Rx:vwh * .36, Zb:home.p.z * .8, Zf:0};
-    else orbit = {mob:0, Rx:Math.max(Math.abs(home.l.x) * 1.45, vwh * .3), Zb:home.p.z * .7, Zf:home.p.z * .3};
+    keys = [{t:0, k:home}, {t:.3, k:home}, {t:.72, k:cutK}, {t:1.95, k:cutK}, {t:2.45, k:home}, {t:TT, k:home}];
   }
   function camAt(t) {
     let a = keys[0], b = keys[keys.length - 1];
@@ -1987,12 +1983,13 @@ function initHero() {
   const skip = $('#skip');
 
   // opening sequence: video forms the label, real logo takes over, label turns to the right
-  let introState = 'cut', m0 = 0, clk = -.35;
-  const CUT = 3.1;
+  let introState = 'video', m0 = 0;
+  const PAUSE_AT = 7.15;
   const showText = () => intro.classList.add('show');
-  const startMorph = () => { if (introState !== 'cut') return; introState = 'morph'; m0 = clk; };
+  const startMorph = () => { if (introState !== 'video') return; introState = 'morph'; m0 = performance.now(); vid.pause(); };
   const finish = () => { introState = 'done'; showText(); };
-  if (reduce || scrollY > 60) finish();
+  if (reduce || scrollY > 60 || !vid.src) finish();
+  else { const pr = vid.play(); if (pr && pr.catch) pr.catch(() => startMorph()); }
   addEventListener('scroll', () => { if (introState !== 'done' && scrollY > 40) finish(); }, {passive:true});
   const easeIO = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
 
@@ -2004,33 +2001,24 @@ function initHero() {
     if (reduce || Math.abs(dd) > 2.6) tC = tT; else tC += clamp(dd * Math.min(1, dt * 6), -1.7 * dt, 1.7 * dt);
     const t = tC;
     let mk = 1, spinIntro = 0, camK;
-    let cu = CUT;
-    clk += Math.min(dt, 1 / 30);
-    if (introState === 'cut') { mk = 0; cu = Math.max(0, clk); if (cu >= CUT) startMorph(); }
-    if (introState === 'morph') { mk = clamp((clk - m0) / 1.9); if (mk >= 1) finish(); }
+    if (introState === 'video') { mk = 0; if (vid.currentTime >= PAUSE_AT || vid.ended) startMorph(); }
+    if (introState === 'morph') { mk = clamp((performance.now() - m0) / 2200); if (mk >= 1) finish(); }
     if (introState !== 'done') {
-      const e = easeIO(smooth(.04, 1, mk));
-      camK = {p:cutK.p.clone().lerp(home.p, e), l:cutK.l.clone().lerp(home.l, e)};
-      spinIntro = -Math.sin(Math.PI * smooth(.05, 1, mk)) * .55; // a gentle turn, never showing the back
-      canvas.style.opacity = 1; vid.style.opacity = 0;
+      const e = easeIO(smooth(.18, 1, mk));
+      camK = {p:match.p.clone().lerp(home.p, e), l:match.l.clone().lerp(home.l, e)};
+      spinIntro = Math.PI * 2 * easeIO(smooth(.18, .95, mk));
+      canvas.style.opacity = smooth(0, .22, mk).toFixed(3);
+      vid.style.opacity = (1 - smooth(.12, .42, mk)).toFixed(3);
     } else {
       camK = camAt(t); canvas.style.opacity = 1;
-      const vo = smooth(.35, .8, t) * (1 - smooth(1.8, 2.4, t)) * .5;
+      const vo = smooth(.06, .28, t) * (1 - smooth(.42, .7, t)) * .55;
       vid.style.opacity = vo.toFixed(3);
       if (vo > .01) {
-        const target = lerp(7.1, 2.6, smooth(.35, 2.3, t));
+        const target = lerp(7.1, 5.4, smooth(.06, .7, t));
         if (!vid.paused) vid.pause();
         if (!vid.seeking && Math.abs(vid.currentTime - target) > .035) vid.currentTime = target;
       }
     }
-    // die-cut: blade traces the outline (0.4-1.9s), then the waste sheet peels up and away (2.0-3.1s)
-    const tr = easeIO(smooth(.4, 1.9, cu)), pe = smooth(2.0, 3.1, cu), pk = easeIO(pe);
-    cutLine.geometry.setDrawRange(0, Math.round(tr * OUT.length));
-    cutLine.material.opacity = .7 * (1 - smooth(.15, .6, pe)); cutLine.visible = cutLine.material.opacity > .01 && tr > 0;
-    blade.position.copy(OUT[Math.round(tr * (OUT.length - 1))]);
-    blade.material.opacity = smooth(.25, .45, cu) * (1 - smooth(1.9, 2.1, cu)); blade.visible = blade.material.opacity > .01;
-    sheetPivot.position.set(0, sheetH / 2 + pk * sheetH * .08, .03 - pk * 5.5); sheetPivot.rotation.x = .55 * pk;
-    sheetMat.opacity = 1 - smooth(.35, 1, pe); sheetPivot.visible = sheetMat.opacity > .01;
     const k = 0;
     const tint = 0;
     sctx.setTransform(DPR, 0, 0, DPR, 0, 0); sctx.clearRect(0, 0, W, H);
@@ -2047,14 +2035,19 @@ function initHero() {
     });
     stage.style.setProperty('--tb', `rgb(${tb.map(v => v | 0).join(',')})`);
     liner.material.opacity = 1;
-    liner.visible = pe > .6;
+    liner.visible = liner.material.opacity > .01;
     const idle = 1 - k;
-    // wrap: the label travels a loop around the page (behind, across, in front) and settles back on the right
-    const we = easeIO(smooth(.45, 2.35, t)), th = Math.PI * 2 * we, sn = Math.sin(th), lift = Math.sin(we * Math.PI);
-    if (orbit.mob) root.position.set(-orbit.Rx * sn, lift * .5, orbit.Zb * (Math.cos(th) - 1) / 2);
-    else root.position.set(orbit.Rx * (Math.cos(th) - 1), lift * .3, -(sn > 0 ? orbit.Zb : orbit.Zf) * sn);
-    const still = 1 - lift, yaw = (orbit.mob ? .7 * Math.cos(th / 2 + Math.PI / 2) : .6 * sn) * lift + Math.sin(th) * .25;
-    root.rotation.set(my * .14 * still + Math.sin(time * .6) * .025 * still + lift * .1, mx * .24 * still + Math.sin(time * .4) * .05 * still + yaw + spinIntro, -.12 * sn);
+    // die-cut on scroll: sheet arrives (.35-.7), blade traces (.75-1.6), waste sheet falls away (1.62-2.1)
+    const tr = easeIO(smooth(.75, 1.6, t)), pe = smooth(1.62, 2.1, t), pk = easeIO(pe);
+    cutLine.geometry.setDrawRange(0, Math.round(tr * OUT.length));
+    cutLine.material.opacity = .7 * (1 - smooth(.15, .6, pe)); cutLine.visible = cutLine.material.opacity > .01 && tr > 0;
+    blade.position.copy(OUT[Math.round(tr * (OUT.length - 1))]);
+    blade.material.opacity = smooth(.68, .78, t) * (1 - smooth(1.58, 1.68, t)); blade.visible = blade.material.opacity > .01;
+    sheetPivot.position.set(0, sheetH / 2 + pk * sheetH * .08, .03 - pk * 5.5); sheetPivot.rotation.x = .55 * pk;
+    sheetMat.opacity = smooth(.35, .66, t) * (1 - smooth(.35, 1, pe)); sheetPivot.visible = sheetMat.opacity > .01;
+    const back = Math.sin(Math.PI * smooth(1.95, 2.45, t));
+    root.position.set(0, 0, 0);
+    root.rotation.set(my * .14 * idle + Math.sin(time * .6) * .025 * idle, mx * .24 * idle + Math.sin(time * .4) * .05 * idle - back * .4 + spinIntro, 0);
     cam.position.copy(camK.p); cam.lookAt(camK.l);
     R.render(scene, cam);
     const io = introState === 'done' ? 1 - smooth(.12, .45, t) : 0;
