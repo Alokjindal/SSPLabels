@@ -706,9 +706,15 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
 .vine-svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .vine-path,.vine-ghost{fill:none;stroke-linecap:round;stroke-linejoin:round}
 .vine-ghost{stroke:#E4E7EF;stroke-width:2;stroke-dasharray:2 9}
-.vine-path{stroke-width:4}
-.vleaf{transform-box:fill-box;transform-origin:0 50%;transition:transform .7s cubic-bezier(.3,1.5,.5,1),opacity .4s;opacity:0;transform:scale(.2)}
-.vleaf.on{opacity:1;transform:scale(1)}
+.web-mask{fill:none;stroke:#fff;stroke-linecap:butt;stroke-width:80}
+.web-edge{fill:none;stroke:#D3D8E2;stroke-width:var(--ww,30px)}
+.web-paper{fill:none;stroke:#fff;stroke-width:calc(var(--ww,30px) - 4px)}
+.web-labels{fill:none;stroke-width:calc(var(--ww,30px) - 12px);stroke-dasharray:26 9;opacity:.9}
+.vine-ghost{stroke-width:2}
+.vroll{transition:opacity .4s}
+.vroll .spin{transform-box:fill-box;transform-origin:center}
+.vroll .ring{opacity:0;transition:opacity .5s}
+.vroll.on .ring{opacity:1}
 .vine-list{list-style:none;margin:0;padding:0;position:relative}
 .vitem{position:relative;width:50%;min-height:clamp(200px,20vw,260px);display:flex;align-items:center;gap:clamp(14px,2vw,24px)}
 .vitem:not(:first-child){margin-top:clamp(-70px,-5vw,-40px)}
@@ -735,7 +741,7 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
   .vdisc{--d:124px}
   .vtxt span{font-size:.9rem}
 }
-@media (prefers-reduced-motion:reduce){.vdisc,.vtxt,.vleaf{transition:none}}
+@media (prefers-reduced-motion:reduce){.vdisc,.vtxt,.vroll .ring{transition:none}}
 </style>
 </head>
 <body>
@@ -820,8 +826,14 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
     <div class="vine" id="vine">
       <svg class="vine-svg" id="vineSvg" aria-hidden="true" preserveAspectRatio="none">
         <defs><linearGradient id="vineG" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="1000">
-          <stop offset="0" stop-color="#1C9AD6"/><stop offset=".33" stop-color="#D9367F"/><stop offset=".66" stop-color="#EDB321"/><stop offset="1" stop-color="#1B1D2C"/></linearGradient></defs>
-        <path class="vine-ghost" id="vineGhost"/><path class="vine-path" id="vinePath" stroke="url(#vineG)"/>
+          <stop offset="0" stop-color="#1C9AD6"/><stop offset=".33" stop-color="#D9367F"/><stop offset=".66" stop-color="#EDB321"/><stop offset="1" stop-color="#1B1D2C"/></linearGradient>
+          <radialGradient id="rollG" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".45" stop-color="#D5DAE3"/><stop offset="1" stop-color="#8E97AA"/></radialGradient>
+          <mask id="webMask" maskUnits="userSpaceOnUse"><path id="vinePath" class="web-mask"/></mask>
+        </defs>
+        <path class="vine-ghost" id="vineGhost"/>
+        <g mask="url(#webMask)">
+          <path class="web-edge" id="webEdge"/><path class="web-paper" id="webPaper"/><path class="web-labels" id="webLabels" stroke="url(#vineG)"/>
+        </g>
         <g id="vineLeaves"></g>
       </svg>
       <ol class="vine-list" id="vineList"></ol>
@@ -2336,7 +2348,7 @@ function openProduct(id) { const c = $(`.pcard[data-id="${id}"]`); if (!c) retur
    OFFERINGS VINE: one ink line winds down the page, a leaf per offering
    ========================================================= */
 function initVine() {
-  const wrap = $('#vine'), list = $('#vineList'), svg = $('#vineSvg'), path = $('#vinePath'), ghost = $('#vineGhost'), leavesG = $('#vineLeaves'), grad = $('#vineG');
+  const wrap = $('#vine'), list = $('#vineList'), svg = $('#vineSvg'), path = $('#vinePath'), ghost = $('#vineGhost'), leavesG = $('#vineLeaves'), grad = $('#vineG'), webs = ['#webEdge', '#webPaper', '#webLabels'].map(q => $(q));
   if (!wrap) return;
   list.innerHTML = P.map((p, i) => `<li class="vitem ${i % 2 ? 'r' : 'l'}" style="--a:${p.a};--as:${p.as}">
     <button class="vbtn" type="button" data-pick="${p.id}" aria-label="${p.name}: see details">
@@ -2346,10 +2358,11 @@ function initVine() {
   list.addEventListener('click', e => { const b = e.target.closest('[data-pick]'); if (b) openProduct(b.dataset.pick); });
   const items = $$('.vitem', list);
   let pts = [], samples = [], total = 1, leaves = [], H = 1;
-  const leafD = 'M0 0C7-9 20-11 30-4C22 4 9 6 0 0Z';
+  let rollers = [], ww = 30;
   function build() {
     const W = wrap.clientWidth; H = wrap.clientHeight;
-    const mob = innerWidth <= 760, cx = mob ? 30 : W / 2, amp = mob ? 9 : Math.min(64, W * .06);
+    const mob = innerWidth <= 760, cx = mob ? 30 : W / 2, amp = mob ? 6 : Math.min(70, W * .065);
+    ww = mob ? 16 : 30; wrap.style.setProperty('--ww', ww + 'px');
     pts = items.map((it, i) => {
       const disc = it.querySelector('.vdisc'), r = disc.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
       const y = r.top - wr.top + r.height / 2, side = mob ? (i % 2 ? 1 : -1) : (i % 2 ? 1 : -1);
@@ -2359,18 +2372,19 @@ function initVine() {
     let d = `M${cx} ${top}`, prev = {x:cx, y:top};
     pts.concat([{x:cx, y:end}]).forEach(q => { const dy = q.y - prev.y; d += `C${prev.x} ${prev.y + dy * .55} ${q.x} ${q.y - dy * .55} ${q.x} ${q.y}`; prev = q; });
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    path.setAttribute('d', d); ghost.setAttribute('d', d);
+    path.setAttribute('d', d); ghost.setAttribute('d', d); webs.forEach(w => w.setAttribute('d', d));
     grad.setAttribute('y1', top); grad.setAttribute('y2', end);
     total = path.getTotalLength();
     samples = []; for (let l = 0; l <= total; l += 6) samples.push([l, path.getPointAtLength(l).y]);
     samples.push([total, end]);
     path.style.strokeDasharray = `${total} ${total}`;
+    // a press roller sits on the outside of every bend, so the web looks wrapped around it
     leavesG.innerHTML = pts.map((q, i) => {
-      // two leaves at each bend: a big one reaching toward the offering, a small one opposite
-      const toward = q.mob ? 0 : (q.side < 0 ? 180 : 0), col = getComputedStyle(items[i]).getPropertyValue('--a').trim() || P[i].a;
-      return `<g transform="translate(${q.x} ${q.y})"><g class="vleaf" style="fill:${col}"><path d="${leafD}" transform="rotate(${toward - 18}) scale(${q.mob ? .7 : 1.1})"/><path d="${leafD}" opacity=".55" transform="rotate(${toward + 180 + 28}) scale(${q.mob ? .45 : .6})"/></g><circle r="${q.mob ? 4 : 5}" fill="#fff" stroke="${col}" stroke-width="2.5"/></g>`;
+      const col = getComputedStyle(items[i]).getPropertyValue('--a').trim() || '#1C9AD6', r = mob ? 9 : 17, side = mob ? -1 : q.side;
+      const x = q.x - side * (r + ww / 2 - 1);
+      return `<g class="vroll" transform="translate(${x.toFixed(1)} ${q.y.toFixed(1)})"><circle class="ring" r="${r + 5}" fill="none" stroke="${col}" stroke-width="2.5"/><circle r="${r}" fill="url(#rollG)" stroke="#7D869A" stroke-width="1.2"/><g class="spin"><path d="M${-r * .62} 0H${r * .62}M0 ${-r * .62}V${r * .62}" stroke="#7D869A" stroke-width="${mob ? 1.4 : 2}" stroke-linecap="round"/></g><circle r="${r * .2}" fill="#5D6578"/></g>`;
     }).join('');
-    leaves = $$('.vleaf', leavesG);
+    rollers = $$('.vroll', leavesG); leaves = rollers;
     update();
   }
   function lenAtY(y) {
@@ -2380,7 +2394,8 @@ function initVine() {
   }
   function update() {
     const wr = wrap.getBoundingClientRect(), tip = reduce ? H + 999 : innerHeight * .72 - wr.top;
-    path.style.strokeDashoffset = (total - lenAtY(tip)).toFixed(1);
+    const L = lenAtY(tip); path.style.strokeDashoffset = (total - L).toFixed(1);
+    rollers.forEach(g => { const sp = g.querySelector('.spin'); if (sp) sp.style.transform = `rotate(${(L * 2.2) % 360}deg)`; });
     pts.forEach((q, i) => { const on = q.y < tip + 6; items[i].classList.toggle('on', on); leaves[i] && leaves[i].classList.toggle('on', on); });
   }
   let raf = 0;
