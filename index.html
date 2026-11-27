@@ -742,6 +742,8 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
   .vtxt span{font-size:.9rem}
 }
 @media (prefers-reduced-motion:reduce){.vdisc,.vtxt,.vroll .ring{transition:none}}
+.cl.has-logo img{max-width:68%;max-height:56%;width:auto;height:auto;object-fit:contain;filter:grayscale(1);opacity:.78;transition:filter .4s,opacity .4s}
+.cl.has-logo:hover img{filter:none;opacity:1}
 </style>
 </head>
 <body>
@@ -2332,7 +2334,12 @@ function initUI() {
   $('#webRow').innerHTML = one + one;
   const yb = $('.years b'); let done = false;
   new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !done) { done = true; const t0 = performance.now(); const step = n => { const k = clamp((n - t0) / 1400), v = Math.round(25 * (1 - Math.pow(1 - k, 3))); yb.textContent = v + '+'; if (k < 1) requestAnimationFrame(step); }; reduce ? 0 : requestAnimationFrame(step); } }), {threshold:.4}).observe(yb);
-  $('#cwall').innerHTML = ['Hercules', 'Avon Cycles', 'Rajdhani Oils', 'Bonn', 'Tata', 'Hero', 'Freeman'].map(n => `<div class="cl">${n}</div>`).join('');
+  // client logos: drop images/clients/<slug>.svg (or .png / .webp) next to index.html and it replaces the name
+  const CL = [['Hercules', 'hercules'], ['Avon Cycles', 'avon'], ['Rajdhani Oils', 'rajdhani'], ['Bonn', 'bonn'], ['Tata', 'tata'], ['Hero', 'hero'], ['Freeman', 'freeman']];
+  $('#cwall').innerHTML = CL.map(([n, k]) => `<div class="cl" data-logo="${k}"><span>${n}</span></div>`).join('');
+  $$('#cwall .cl').forEach(el => { const k = el.dataset.logo, n = el.textContent, ex = ['svg', 'png', 'webp']; let i = 0;
+    const tryNext = () => { if (i >= ex.length) return; const im = new Image(); im.alt = n; im.onload = () => { el.textContent = ''; el.appendChild(im); el.classList.add('has-logo'); }; im.onerror = tryNext; im.src = `images/clients/${k}.${ex[i++]}`; };
+    tryNext(); });
   $('#yr').textContent = new Date().getFullYear();
 }
 
