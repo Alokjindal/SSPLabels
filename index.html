@@ -744,6 +744,27 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
 @media (prefers-reduced-motion:reduce){.vdisc,.vtxt,.vroll .ring{transition:none}}
 .cl.has-logo img{max-width:68%;max-height:56%;width:auto;height:auto;object-fit:contain;filter:grayscale(1);opacity:.78;transition:filter .4s,opacity .4s}
 .cl.has-logo:hover img{filter:none;opacity:1}
+
+/* ================= v12: hero buttons + consistency ================= */
+.intro .cta{justify-content:flex-start}
+.intro h1,.outro h2,.vine-head h2,.head h2{text-wrap:balance}
+@media (max-width:820px){
+  .intro{padding:0 0 max(64px,calc(9svh + env(safe-area-inset-bottom,0px)))}
+  .intro-txt{flex:1 1 auto;width:auto;min-width:0}
+  .intro h1{max-width:17ch;margin-left:auto;margin-right:auto}
+  .intro .lead{max-width:40ch}
+  .intro .cta{justify-content:center}
+}
+/* consistency sweep */
+html,body{overflow-x:clip}
+.pgrid{max-width:none;margin-inline:0}
+.logo-float{display:none}
+@media (min-width:761px){.cwall{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.cl{font-size:clamp(1rem,1.25vw,1.2rem);padding:0 10px;text-align:center}}
+#minfo h3,.ibody h3{font-family:var(--serif);font-weight:500;letter-spacing:-.02em;font-variation-settings:"opsz" 144}
+.phead .lead{margin-top:14px}
+@media (max-width:420px){.bar-in{gap:12px}.lockup{gap:9px}.lockup .mk{height:30px}.lockup .wd{height:11px}.lockup small{letter-spacing:.2em;font-size:.56rem}}
+.float{white-space:nowrap}
+@media (max-width:760px){.float{font-size:.74rem}}
 </style>
 </head>
 <body>
@@ -823,7 +844,7 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
   <div class="wrap">
     <div class="vine-head reveal">
       <p class="eyebrow">Twelve offerings</p>
-      <h2 id="offer-h">Everything we print.</h2>
+      <h2 id="offer-h">Everything we print</h2>
     </div>
     <div class="vine" id="vine">
       <svg class="vine-svg" id="vineSvg" aria-hidden="true" preserveAspectRatio="none">
@@ -2180,7 +2201,7 @@ function showInd(i) {
       <span class="orb" style="width:200px;height:200px;right:6%;top:-40px;background:radial-gradient(circle,rgba(255,255,255,.9),transparent 70%)"></span>
       ${scene ? `<img class="bg" src="${scene}" alt="">` : ''}
       ${imgs.map((u, k) => `<img class="cut c${k}" src="${u}" alt="">`).join('')}
-      ${d.floats.map((f, k) => `<span class="float" style="left:${fl[k][0]};top:${fl[k][1]};animation-delay:${k * .6}s"><i></i>${f}</span>`).join('')}
+      ${d.floats.map((f, k) => `<span class="float" style="${k === 2 ? 'right:6%' : 'left:' + fl[k][0]};top:${fl[k][1]};animation-delay:${k * .6}s"><i></i>${f}</span>`).join('')}
     </div>
     <div class="ibody">
       <h3>${d.n}</h3><p>${d.intro}</p>
@@ -2417,7 +2438,10 @@ async function boot() {
   initUI(); renderIndList(); initFlow(); initProcess();
   $('#rOffset').src = PH.offset || '';
   const av = $('#aboutVid'); av.src = getVid('flexo'); playWhenVisible(av);
-  $('#storyVid').src = getVid('story');
+  // hero video: cleaned-up 1080p file for large screens, 720p for phones; built-in copy if the file is missing
+  const sv = $('#storyVid'), big = Math.max(innerWidth, innerHeight) * Math.min(devicePixelRatio || 1, 2) > 1300;
+  sv.addEventListener('error', () => { if (!sv.dataset.fb) { sv.dataset.fb = 1; sv.src = getVid('story'); } }, {once:true});
+  sv.src = big ? 'media/story.mp4' : 'media/story-720.mp4';
   initGrid();
   try { initVine(); } catch (e) { console.warn('vine', e); }
   if (GL_OK) {
