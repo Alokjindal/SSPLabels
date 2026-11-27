@@ -1918,7 +1918,7 @@ function initHero() {
   liner.position.set(.14, -.16, -.2); root.add(liner);
   const TINTS = PS.map(p => { const c = new T.Color(p.tint); return [c.r * 255, c.g * 255, c.b * 255]; }), BASE = [247, 248, 251];
   const intro = $('#intro'), outro = $('#outro');
-  let W = 1, H = 1, DPR = 1, keys = [], tT = 0, tC = 0, mx = 0, my = 0, match = null, home = null;
+  let orbit = {mob:0, Rx:1, Zb:1, Zf:0}, W = 1, H = 1, DPR = 1, keys = [], tT = 0, tC = 0, mx = 0, my = 0, match = null, home = null;
   const V = (x, y, z) => new T.Vector3(x, y, z);
   function place(cx, cy, wF, hF) {
     const asp = W / H, D = Math.max(5.6 * 1.06 / (wF * asp * tf), 3.86 * 1.12 / (hF * tf)), vh = D * tf, vw = vh * asp;
@@ -1933,8 +1933,11 @@ function initHero() {
     match = {p:V(lx, ly, D), l:V(lx, ly, 0)};
     const over = {p:V(0, 0, Math.max(home.p.z, 11) * 1.6), l:V(0, 0, 0)};
     const foc = shards.map(sh => { const F = sh.target.clone(), D2 = mob ? 13 : 9.6, vis = D2 * Math.tan(16 * Math.PI / 180); const sx = mob ? 0 : vis * asp * .02, sy = mob ? -vis * .05 : 0; return {p:V(F.x + sx, F.y + sy + .5, F.z + D2), l:V(F.x + sx, F.y + sy, F.z)}; });
-    keys = [{t:0, k:home}, {t:.6, k:home}, {t:1.45, k:over}];
-    keys.push({t:1.75, k:over}, {t:2.45, k:home}, {t:TT, k:home});
+    keys = [{t:0, k:home}, {t:TT, k:home}];
+    // wrap path: the whole label circles a vertical axis, passing behind the page and sweeping back across the front
+    const vwh = home.p.z * tf * asp;
+    if (mob) orbit = {mob:1, Rx:vwh * .36, Zb:home.p.z * .8, Zf:0};
+    else orbit = {mob:0, Rx:Math.max(Math.abs(home.l.x) * 1.45, vwh * .3), Zb:home.p.z * .7, Zf:home.p.z * .3};
   }
   function camAt(t) {
     let a = keys[0], b = keys[keys.length - 1];
@@ -1991,16 +1994,16 @@ function initHero() {
       vid.style.opacity = (1 - smooth(.12, .42, mk)).toFixed(3);
     } else {
       camK = camAt(t); canvas.style.opacity = 1;
-      const vo = smooth(.45, .95, t) * (1 - smooth(1.9, 2.5, t)) * .92;
+      const vo = smooth(.35, .8, t) * (1 - smooth(1.8, 2.4, t)) * .5;
       vid.style.opacity = vo.toFixed(3);
       if (vo > .01) {
-        const target = t < S0 ? lerp(13, 16, smooth(.45, S0, t)) : lerp(16, 12, smooth(1.5, 2.45, t));
+        const target = lerp(7.1, 2.6, smooth(.35, 2.3, t));
         if (!vid.paused) vid.pause();
         if (!vid.seeking && Math.abs(vid.currentTime - target) > .035) vid.currentTime = target;
       }
     }
-    const k = smooth(.72, 1.45, t) * (1 - smooth(1.6, 2.3, t));
-    const tint = smooth(.85, 1.45, t) * (1 - smooth(1.7, 2.3, t));
+    const k = 0;
+    const tint = 0;
     sctx.setTransform(DPR, 0, 0, DPR, 0, 0); sctx.clearRect(0, 0, W, H);
     let tb = BASE.slice();
     shards.forEach((s, i) => {
@@ -2014,10 +2017,15 @@ function initHero() {
       if (fw > 0) tb = tb.map((v, j) => v + (TINTS[i][j] - v) * fw * .85);
     });
     stage.style.setProperty('--tb', `rgb(${tb.map(v => v | 0).join(',')})`);
-    liner.material.opacity = 1 - smooth(.7, 1.0, t) + smooth(2.2, 2.6, t);
+    liner.material.opacity = 1;
     liner.visible = liner.material.opacity > .01;
     const idle = 1 - k;
-    root.rotation.set(my * .14 * idle + Math.sin(time * .6) * .025 * idle, mx * .24 * idle + Math.sin(time * .4) * .05 * idle + Math.PI * 2 * smooth(2.0, 2.85, t) + spinIntro, 0);
+    // wrap: the label travels a loop around the page (behind, across, in front) and settles back on the right
+    const we = easeIO(smooth(.45, 2.35, t)), th = Math.PI * 2 * we, sn = Math.sin(th), lift = Math.sin(we * Math.PI);
+    if (orbit.mob) root.position.set(-orbit.Rx * sn, lift * .5, orbit.Zb * (Math.cos(th) - 1) / 2);
+    else root.position.set(orbit.Rx * (Math.cos(th) - 1), lift * .3, -(sn > 0 ? orbit.Zb : orbit.Zf) * sn);
+    const still = 1 - lift, yaw = (orbit.mob ? .7 * Math.cos(th / 2 + Math.PI / 2) : .6 * sn) * lift + Math.sin(th) * .25;
+    root.rotation.set(my * .14 * still + Math.sin(time * .6) * .025 * still + lift * .1, mx * .24 * still + Math.sin(time * .4) * .05 * still + yaw + spinIntro, -.12 * sn);
     cam.position.copy(camK.p); cam.lookAt(camK.l);
     R.render(scene, cam);
     const io = introState === 'done' ? 1 - smooth(.12, .45, t) : 0;
