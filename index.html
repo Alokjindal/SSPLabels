@@ -87,7 +87,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 @media (max-width:420px){.lockup .wd{height:12px}.lockup .mk{height:34px}}
 
 /* ============ STORY HERO ============ */
-.story{position:relative;height:calc(100svh + 3 * 62svh);margin-top:-75px}
+.story{position:relative;height:calc(100svh + 6 * 62svh);margin-top:-75px}
 .stage{position:sticky;top:0;height:100svh;overflow:hidden}
 #heroGL{position:absolute;inset:0;width:100%;height:100%;display:block}
 .intro{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;padding:calc(74px + clamp(20px,5vh,56px)) 20px 0;text-align:center}
@@ -461,7 +461,7 @@ h3{font-size:clamp(1.2rem,1.6vw,1.4rem);line-height:1.25}
 .fab{display:none!important}
 
 /* ================= v4: opening + story ================= */
-.story{height:calc(100svh + 3 * 80svh)}
+.story{height:calc(100svh + 6 * 80svh)}
 .svid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;mix-blend-mode:multiply;pointer-events:none}
 #splashC{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 #heroGL{z-index:2;opacity:0}
@@ -1916,27 +1916,9 @@ function initHero() {
   const lshape = new T.Shape(); for (let k = 0; k <= 96; k++) { const ph = k / 96 * Math.PI * 2, r = polarR(ph) * 1.035; const v = new T.Vector2(Math.cos(ph) * r, Math.sin(ph) * r); k ? lshape.lineTo(v.x, v.y) : lshape.moveTo(v.x, v.y); }
   const liner = new T.Mesh(new T.ShapeGeometry(lshape), lin(new T.MeshStandardMaterial({color:0xE3E7EF, roughness:.8, transparent:true})));
   liner.position.set(.14, -.16, -.2); root.add(liner);
-  // scroll die-cut: the label lands on a white sheet, a blade traces its outline, the waste sheet falls away
-  const OUT = []; for (let k = 0; k <= 240; k++) { const ph = Math.PI * .62 - k / 240 * Math.PI * 2, r = polarR(ph) * 1.012; OUT.push(new T.Vector3(Math.cos(ph) * r, Math.sin(ph) * r, .036)); }
-  const sheetPivot = new T.Group(); root.add(sheetPivot);
-  const sheetMat = lin(new T.MeshStandardMaterial({color:0xF7F8FB, emissive:0xC9CBD0, roughness:.95, transparent:true, side:T.DoubleSide}));
-  let sheet = null, sheetH = 12;
-  function buildSheet(w, h) {
-    if (sheet) { sheetPivot.remove(sheet); sheet.geometry.dispose(); }
-    const sh = new T.Shape(); sh.moveTo(-w / 2, -h / 2); sh.lineTo(w / 2, -h / 2); sh.lineTo(w / 2, h / 2); sh.lineTo(-w / 2, h / 2); sh.closePath();
-    const hole = new T.Path(); OUT.slice().reverse().forEach((v, k) => k ? hole.lineTo(v.x, v.y) : hole.moveTo(v.x, v.y)); sh.holes.push(hole);
-    const g = new T.ShapeGeometry(sh, 2); g.translate(0, -h / 2, 0);
-    sheet = new T.Mesh(g, sheetMat); sheetPivot.add(sheet); sheetH = h;
-  }
-  const cutLine = new T.Line(new T.BufferGeometry().setFromPoints(OUT), new T.LineBasicMaterial({color:0x2E3440, transparent:true}));
-  cutLine.geometry.setDrawRange(0, 0); root.add(cutLine);
-  const bc = document.createElement('canvas'); bc.width = bc.height = 64;
-  { const g = bc.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(24,27,34,1)'); r.addColorStop(.18, 'rgba(24,27,34,.95)'); r.addColorStop(.32, 'rgba(236,0,140,.35)'); r.addColorStop(.6, 'rgba(0,174,239,.12)'); r.addColorStop(1, 'rgba(0,174,239,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); }
-  const blade = new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(bc), transparent:true, depthWrite:false, depthTest:false}));
-  blade.scale.setScalar(.6); blade.renderOrder = 5; root.add(blade);
   const TINTS = PS.map(p => { const c = new T.Color(p.tint); return [c.r * 255, c.g * 255, c.b * 255]; }), BASE = [247, 248, 251];
   const intro = $('#intro'), outro = $('#outro');
-  let cutK = null, W = 1, H = 1, DPR = 1, keys = [], tT = 0, tC = 0, mx = 0, my = 0, match = null, home = null;
+  let W = 1, H = 1, DPR = 1, keys = [], tT = 0, tC = 0, mx = 0, my = 0, match = null, home = null;
   const V = (x, y, z) => new T.Vector3(x, y, z);
   function place(cx, cy, wF, hF) {
     const asp = W / H, D = Math.max(5.6 * 1.06 / (wF * asp * tf), 3.86 * 1.12 / (hF * tf)), vh = D * tf, vw = vh * asp;
@@ -1951,10 +1933,8 @@ function initHero() {
     match = {p:V(lx, ly, D), l:V(lx, ly, 0)};
     const over = {p:V(0, 0, Math.max(home.p.z, 11) * 1.6), l:V(0, 0, 0)};
     const foc = shards.map(sh => { const F = sh.target.clone(), D2 = mob ? 13 : 9.6, vis = D2 * Math.tan(16 * Math.PI / 180); const sx = mob ? 0 : vis * asp * .02, sy = mob ? -vis * .05 : 0; return {p:V(F.x + sx, F.y + sy + .5, F.z + D2), l:V(F.x + sx, F.y + sy, F.z)}; });
-    // scroll: camera centres on the label for the die-cut, then hands it back to the right
-    const Dc = Math.max(5.6 * 1.06 / ((mob ? .8 : .56) * asp * tf), 3.86 * 1.06 / ((mob ? .42 : .62) * tf)), vhC = Dc * tf;
-    cutK = {p:V(0, 0, Dc), l:V(0, 0, 0)}; buildSheet(vhC * asp * 1.6, vhC * 1.6);
-    keys = [{t:0, k:home}, {t:.3, k:home}, {t:.72, k:cutK}, {t:1.95, k:cutK}, {t:2.45, k:home}, {t:TT, k:home}];
+    keys = [{t:0, k:home}, {t:.6, k:home}, {t:1.35, k:over}];
+    keys.push({t:1.85, k:over}, {t:2.45, k:home}, {t:TT, k:home});
   }
   function camAt(t) {
     let a = keys[0], b = keys[keys.length - 1];
@@ -2011,16 +1991,16 @@ function initHero() {
       vid.style.opacity = (1 - smooth(.12, .42, mk)).toFixed(3);
     } else {
       camK = camAt(t); canvas.style.opacity = 1;
-      const vo = smooth(.06, .28, t) * (1 - smooth(.42, .7, t)) * .55;
+      const vo = smooth(.45, .95, t) * (1 - smooth(1.9, 2.5, t)) * .92;
       vid.style.opacity = vo.toFixed(3);
       if (vo > .01) {
-        const target = lerp(7.1, 5.4, smooth(.06, .7, t));
+        const target = t < 1.35 ? lerp(13, 16, smooth(.45, 1.35, t)) : lerp(16, 12, smooth(1.75, 2.45, t));
         if (!vid.paused) vid.pause();
         if (!vid.seeking && Math.abs(vid.currentTime - target) > .035) vid.currentTime = target;
       }
     }
-    const k = 0;
-    const tint = 0;
+    const k = smooth(.7, 1.35, t) * (1 - smooth(1.75, 2.35, t));
+    const tint = smooth(.8, 1.35, t) * (1 - smooth(1.8, 2.35, t));
     sctx.setTransform(DPR, 0, 0, DPR, 0, 0); sctx.clearRect(0, 0, W, H);
     let tb = BASE.slice();
     shards.forEach((s, i) => {
@@ -2034,20 +2014,10 @@ function initHero() {
       if (fw > 0) tb = tb.map((v, j) => v + (TINTS[i][j] - v) * fw * .85);
     });
     stage.style.setProperty('--tb', `rgb(${tb.map(v => v | 0).join(',')})`);
-    liner.material.opacity = 1;
+    liner.material.opacity = 1 - smooth(.7, 1.0, t) + smooth(2.2, 2.6, t);
     liner.visible = liner.material.opacity > .01;
     const idle = 1 - k;
-    // die-cut on scroll: sheet arrives (.35-.7), blade traces (.75-1.6), waste sheet falls away (1.62-2.1)
-    const tr = easeIO(smooth(.75, 1.6, t)), pe = smooth(1.62, 2.1, t), pk = easeIO(pe);
-    cutLine.geometry.setDrawRange(0, Math.round(tr * OUT.length));
-    cutLine.material.opacity = .7 * (1 - smooth(.15, .6, pe)); cutLine.visible = cutLine.material.opacity > .01 && tr > 0;
-    blade.position.copy(OUT[Math.round(tr * (OUT.length - 1))]);
-    blade.material.opacity = smooth(.68, .78, t) * (1 - smooth(1.58, 1.68, t)); blade.visible = blade.material.opacity > .01;
-    sheetPivot.position.set(0, sheetH / 2 + pk * sheetH * .08, .03 - pk * 5.5); sheetPivot.rotation.x = .55 * pk;
-    sheetMat.opacity = smooth(.35, .66, t) * (1 - smooth(.35, 1, pe)); sheetPivot.visible = sheetMat.opacity > .01;
-    const back = Math.sin(Math.PI * smooth(1.95, 2.45, t));
-    root.position.set(0, 0, 0);
-    root.rotation.set(my * .14 * idle + Math.sin(time * .6) * .025 * idle, mx * .24 * idle + Math.sin(time * .4) * .05 * idle - back * .4 + spinIntro, 0);
+    root.rotation.set(my * .14 * idle + Math.sin(time * .6) * .025 * idle, mx * .24 * idle + Math.sin(time * .4) * .05 * idle + Math.PI * 2 * smooth(2.0, 2.85, t) + spinIntro, 0);
     cam.position.copy(camK.p); cam.lookAt(camK.l);
     R.render(scene, cam);
     const io = introState === 'done' ? 1 - smooth(.12, .45, t) : 0;
