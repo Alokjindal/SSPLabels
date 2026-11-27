@@ -2435,6 +2435,8 @@ function initVine() {
 }
 
 async function boot() {
+  // always start at the top so the opening video plays, even after a reload mid-page
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; if (!location.hash) scrollTo(0, 0); } catch (e) {}
   initUI(); renderIndList(); initFlow(); initProcess();
   $('#rOffset').src = PH.offset || '';
   const av = $('#aboutVid'); av.src = getVid('flexo'); playWhenVisible(av);
