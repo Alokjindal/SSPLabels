@@ -333,7 +333,7 @@ address{font-style:normal;color:var(--ink-2);line-height:1.6}
 /* footer */
 footer{background:linear-gradient(180deg,rgba(255,255,255,0),#fff 30%);padding:70px 0 calc(36px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .fgrid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:36px}
-.flogo{width:230px}
+.flogo{width:230px;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;display:block}
 footer h4{font-size:1rem;margin-bottom:12px}
 footer a{display:block;text-decoration:none;color:var(--ink-2);padding:3px 0}
 footer a:hover{color:var(--ink)}
@@ -683,19 +683,19 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
 .builder .bcap{padding:12px 4px 0}
 .finishes{margin-top:clamp(48px,6vw,80px)}
 .finishes h3{font-family:var(--serif);font-weight:500;font-size:clamp(1.4rem,2vw,1.8rem);letter-spacing:-.02em;margin-bottom:18px}
-.fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px)}
-.fgrid figure{margin:0}
-.fgrid .fimg{aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:#EEF1F6}
-.fgrid img{width:100%;height:100%;object-fit:cover;transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
-.fgrid figure:hover img{transform:scale(1.04)}
-.fgrid figcaption{margin-top:10px;font-size:.95rem;font-weight:600}
-.fgrid figcaption small{display:block;font-weight:400;color:var(--ink-2);font-size:.88rem;margin-top:2px}
+.fingrid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,20px)}
+.fingrid figure{margin:0}
+.fingrid .fimg{aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:#EEF1F6}
+.fingrid img{width:100%;height:100%;object-fit:cover;transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
+.fingrid figure:hover img{transform:scale(1.04)}
+.fingrid figcaption{margin-top:10px;font-size:.95rem;font-weight:600}
+.fingrid figcaption small{display:block;font-weight:400;color:var(--ink-2);font-size:.88rem;margin-top:2px}
 .iscene .bg{z-index:0;animation:none}
 .iscene .bg~.orb{display:none}
 .iscene:has(.bg) .orb{display:none}
 @media (max-width:880px){.pphotos{max-height:30svh;aspect-ratio:auto;height:30svh}}
-@media (max-width:700px){.fgrid{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:78%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:4px}.fgrid figure{scroll-snap-align:start}}
-@media (prefers-reduced-motion:reduce){.pphotos img,.fgrid img{transition:none}}
+@media (max-width:700px){.fingrid{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:78%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:4px}.fingrid figure{scroll-snap-align:start}}
+@media (prefers-reduced-motion:reduce){.pphotos img,.fingrid img{transition:none}}
 </style>
 </head>
 <body>
@@ -799,7 +799,7 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
   </div>
   <div class="wrap finishes reveal">
     <h3>Finishes, up close</h3>
-    <div class="fgrid" id="fgrid"></div>
+    <div class="fingrid" id="fgrid"></div>
   </div>
 </section>
 
@@ -1015,6 +1015,8 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
    To add or replace an image, drop a file with the slot's name into the images/ folder. Nothing else changes. */
 (function () {
   var DIR = 'images/', EXT = ['webp', 'png', 'jpg'];
+  // If images/ is not next to this file (single-file previews, emailed copies), load the same files from the GitHub repo via jsDelivr.
+  var CDN = ['https://cdn.jsdelivr.net/gh/alokjindal/ssplabels@main/images/', 'https://cdn.jsdelivr.net/gh/alokjindal/ssplabels@site-v10-images/images/'];
   // id: [label, width, height, kind, used in, alt text]
   var M = {
     cut_cosmetic:   ['Cosmetic labels, cut-out', 618, 900, 'cutout', 'Story slide 1, product card, industry scene, label strip', 'Cosmetic serum bottle with a premium printed label'],
@@ -1106,8 +1108,8 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
   function resolve(id) {
     var k = 0;
     (function next() {
-      if (k >= EXT.length) { if (EMB[id]) { RES[id] = EMB[id]; swap(id); } return; }
-      var url = DIR + id + '.' + EXT[k++], im = new Image();
+      if (k >= EXT.length + CDN.length) { if (EMB[id]) { RES[id] = EMB[id]; swap(id); } return; }
+      var url = k < EXT.length ? DIR + id + '.' + EXT[k] : CDN[k - EXT.length] + id + '.webp', im = new Image(); k++;
       im.onload = function () { RES[id] = url; swap(id); };
       im.onerror = next; im.src = url;
     })();
