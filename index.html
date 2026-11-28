@@ -87,7 +87,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 @media (max-width:420px){.lockup .wd{height:12px}.lockup .mk{height:34px}}
 
 /* ============ STORY HERO ============ */
-.story{position:relative;height:calc(100svh + 3 * 62svh);margin-top:-75px}
+.story{position:relative;height:calc(100svh + 6 * 62svh);margin-top:-75px}
 .stage{position:sticky;top:0;height:100svh;overflow:hidden}
 #heroGL{position:absolute;inset:0;width:100%;height:100%;display:block}
 .intro{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;padding:calc(74px + clamp(20px,5vh,56px)) 20px 0;text-align:center}
@@ -461,7 +461,7 @@ h3{font-size:clamp(1.2rem,1.6vw,1.4rem);line-height:1.25}
 .fab{display:none!important}
 
 /* ================= v4: opening + story ================= */
-.story{height:calc(100svh + 3 * 80svh)}
+.story{height:calc(100svh + 6 * 80svh)}
 .svid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;mix-blend-mode:multiply;pointer-events:none}
 #splashC{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 #heroGL{z-index:2;opacity:0}
@@ -1933,8 +1933,8 @@ function initHero() {
     match = {p:V(lx, ly, D), l:V(lx, ly, 0)};
     const over = {p:V(0, 0, Math.max(home.p.z, 11) * 1.6), l:V(0, 0, 0)};
     const foc = shards.map(sh => { const F = sh.target.clone(), D2 = mob ? 13 : 9.6, vis = D2 * Math.tan(16 * Math.PI / 180); const sx = mob ? 0 : vis * asp * .02, sy = mob ? -vis * .05 : 0; return {p:V(F.x + sx, F.y + sy + .5, F.z + D2), l:V(F.x + sx, F.y + sy, F.z)}; });
-    keys = [{t:0, k:home}, {t:.6, k:home}, {t:1.45, k:over}];
-    keys.push({t:1.75, k:over}, {t:2.45, k:home}, {t:TT, k:home});
+    keys = [{t:0, k:home}, {t:.6, k:home}, {t:1.35, k:over}];
+    keys.push({t:1.85, k:over}, {t:2.45, k:home}, {t:TT, k:home});
   }
   function camAt(t) {
     let a = keys[0], b = keys[keys.length - 1];
@@ -1994,13 +1994,13 @@ function initHero() {
       const vo = smooth(.45, .95, t) * (1 - smooth(1.9, 2.5, t)) * .92;
       vid.style.opacity = vo.toFixed(3);
       if (vo > .01) {
-        const target = t < S0 ? lerp(13, 16, smooth(.45, S0, t)) : lerp(16, 12, smooth(1.5, 2.45, t));
+        const target = t < 1.35 ? lerp(13, 16, smooth(.45, 1.35, t)) : lerp(16, 12, smooth(1.75, 2.45, t));
         if (!vid.paused) vid.pause();
         if (!vid.seeking && Math.abs(vid.currentTime - target) > .035) vid.currentTime = target;
       }
     }
-    const k = smooth(.72, 1.45, t) * (1 - smooth(1.6, 2.3, t));
-    const tint = smooth(.85, 1.45, t) * (1 - smooth(1.7, 2.3, t));
+    const k = smooth(.7, 1.35, t) * (1 - smooth(1.75, 2.35, t));
+    const tint = smooth(.8, 1.35, t) * (1 - smooth(1.8, 2.35, t));
     sctx.setTransform(DPR, 0, 0, DPR, 0, 0); sctx.clearRect(0, 0, W, H);
     let tb = BASE.slice();
     shards.forEach((s, i) => {
@@ -2435,6 +2435,8 @@ function initVine() {
 }
 
 async function boot() {
+  // always start at the top so the opening video plays, even after a reload mid-page
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; if (!location.hash) scrollTo(0, 0); } catch (e) {}
   initUI(); renderIndList(); initFlow(); initProcess();
   $('#rOffset').src = PH.offset || '';
   const av = $('#aboutVid'); av.src = getVid('flexo'); playWhenVisible(av);
