@@ -2444,10 +2444,11 @@ async function boot() {
   initUI(); renderIndList(); initFlow(); initProcess();
   $('#rOffset').src = PH.offset || '';
   const av = $('#aboutVid'); av.src = 'media/flexo.mp4'; playWhenVisible(av);
-  // hero video: cleaned-up 1080p file for large screens, 720p for phones; built-in copy if the file is missing
-  const sv = $('#storyVid'), big = innerWidth * Math.min(devicePixelRatio || 1, 2) > 1300;
+  // hero video: portrait screens get a full-resolution centre cut (no zooming a 720p frame);
+  // landscape gets 1080p on large screens, 720p on small ones
+  const sv = $('#storyVid'), portrait = innerHeight > innerWidth * 1.05, big = innerWidth * Math.min(devicePixelRatio || 1, 2) > 1300;
   sv.addEventListener('error', () => { if (!sv.dataset.fb) { sv.dataset.fb = 1; sv.src = 'media/story-720.mp4'; } }, {once:true});
-  sv.src = big ? 'media/story.mp4' : 'media/story-720.mp4';
+  sv.src = portrait ? 'media/story-portrait.mp4' : big ? 'media/story.mp4' : 'media/story-720.mp4';
   initGrid();
   try { initVine(); } catch (e) { console.warn('vine', e); }
   if (GL_OK) {
