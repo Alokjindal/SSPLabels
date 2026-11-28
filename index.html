@@ -767,12 +767,13 @@ html,body{overflow-x:clip}
 @media (max-width:760px){.float{font-size:.74rem}}
 
 /* clients: 12 logos, A-Z, even visual weight */
-.cwall{grid-template-columns:repeat(4,1fr)!important;gap:12px}
+.cwall{display:flex!important;flex-wrap:wrap;justify-content:center;gap:12px}
+.cwall .cl{flex:0 0 calc((100% - 36px) / 4)}
 .cl.has-logo{height:116px}
 .cl.has-logo img{max-width:none;max-height:none;object-fit:contain;filter:none;opacity:1;transition:transform .4s}
 .cl.has-logo:hover img{transform:scale(1.04)}
-@media (max-width:900px){.cwall{grid-template-columns:repeat(3,1fr)!important}}
-@media (max-width:560px){.cwall{grid-template-columns:repeat(2,1fr)!important;gap:10px}.cl.has-logo{height:88px}}
+@media (max-width:900px){.cwall .cl{flex-basis:calc((100% - 24px) / 3)}}
+@media (max-width:560px){.cwall{gap:10px}.cwall .cl{flex-basis:calc((100% - 10px) / 2)}.cl.has-logo{height:88px}}
 </style>
 </head>
 <body>
@@ -2366,7 +2367,7 @@ function initUI() {
   const yb = $('.years b'); let done = false;
   new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !done) { done = true; const t0 = performance.now(); const step = n => { const k = clamp((n - t0) / 1400), v = Math.round(25 * (1 - Math.pow(1 - k, 3))); yb.textContent = v + '+'; if (k < 1) requestAnimationFrame(step); }; reduce ? 0 : requestAnimationFrame(step); } }), {threshold:.4}).observe(yb);
   // client logos (A-Z): images/clients/<slug>.webp, sized so every logo carries the same visual weight
-  const CL = [['Avon Cycles', 'avon', 1.141], ['Bonn', 'bonn', 1.645], ['Cult.fit', 'cultfit', 3.023], ['Djain', 'djain', 1.35], ['Freemans', 'freemans', 5.814], ['Gang', 'gang', 4.091], ['Hercules', 'hercules', 4.536], ['Hero Cycles', 'hero', 3.032], ['Kross Bikes', 'kross', 3.509], ['Lifeline', 'lifeline', 2.555], ['Rajdhani', 'rajdhani', 2.5], ['Stylo Cycles', 'stylo', 2.855]];
+  const CL = [['Avon Cycles', 'avon', 1.141], ['Bonn', 'bonn', 1.645], ['Cult.fit', 'cultfit', 3.023], ['Freemans', 'freemans', 5.814], ['Gang', 'gang', 4.091], ['Hercules', 'hercules', 4.536], ['Hero Cycles', 'hero', 3.032], ['Kross Bikes', 'kross', 3.509], ['Lifeline', 'lifeline', 2.555], ['Rajdhani', 'rajdhani', 2.5], ['Stylo Cycles', 'stylo', 2.855]];
   $('#cwall').innerHTML = CL.map(([n, k, r]) => `<div class="cl has-logo" data-r="${r}"><img src="images/clients/${k}.webp" alt="${n}" loading="lazy" decoding="async"></div>`).join('');
   const fitLogos = () => $$('#cwall .cl').forEach(el => { const im = el.querySelector('img'), r = +el.dataset.r, tw = el.clientWidth * .8, th = el.clientHeight * .68;
     let h = Math.sqrt(tw * th * .4 / r); h = Math.min(h, th, tw / r); im.style.height = h.toFixed(1) + 'px'; im.style.width = (h * r).toFixed(1) + 'px'; });
