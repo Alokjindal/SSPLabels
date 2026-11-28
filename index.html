@@ -765,6 +765,15 @@ html,body{overflow-x:clip}
 @media (max-width:420px){.bar-in{gap:12px}.lockup{gap:9px}.lockup .mk{height:30px}.lockup .wd{height:11px}.lockup small{letter-spacing:.2em;font-size:.56rem}}
 .float{white-space:nowrap}
 @media (max-width:760px){.float{font-size:.74rem}}
+
+/* clients: 12 logos, A-Z, even visual weight */
+.cwall{display:flex!important;flex-wrap:wrap;justify-content:center;gap:12px}
+.cwall .cl{flex:0 0 calc((100% - 36px) / 4)}
+.cl.has-logo{height:116px}
+.cl.has-logo img{max-width:none;max-height:none;object-fit:contain;filter:none;opacity:1;transition:transform .4s}
+.cl.has-logo:hover img{transform:scale(1.04)}
+@media (max-width:900px){.cwall .cl{flex-basis:calc((100% - 24px) / 3)}}
+@media (max-width:560px){.cwall{gap:10px}.cwall .cl{flex-basis:calc((100% - 10px) / 2)}.cl.has-logo{height:88px}}
 </style>
 </head>
 <body>
@@ -1023,8 +1032,7 @@ html,body{overflow-x:clip}
 <section class="sec short" id="clients">
   <div class="wrap">
     <div class="head reveal">
-      <h2>Brands that trust our labels</h2>
-      <p class="lead">A few of the companies whose products carry labels printed at SSP.</p>
+      <h2>Clients</h2>
     </div>
     <div class="cwall reveal" id="cwall"></div>
   </div>
@@ -2189,11 +2197,14 @@ function renderIndList() {
   $('#ilist').addEventListener('click', e => { const b = e.target.closest('.ibtn'); if (b) showInd(+b.dataset.i); });
 }
 const IND_SCENE = ['ind_cosmetics', '', 'ind_beverages', 'ind_household', 'ind_pharma', 'ind_ayurveda', 'ind_cycles', 'ind_electronics'];
+// everything listed A-Z: industries carry their scene with them, products get a sorted copy (the hero keeps its own six)
+IND.forEach((d, i) => d.scene = IND_SCENE[i]); IND.sort((a, b) => a.n.localeCompare(b.n));
+const PA = P.slice().sort((a, b) => a.name.localeCompare(b.name));
 function showInd(i) {
   const d = IND[i], el = $('#ipanel');
   $$('.ibtn').forEach(b => b.setAttribute('aria-selected', +b.dataset.i === i));
   el.style.setProperty('--a', d.a); el.style.setProperty('--as', d.as);
-  const scene = IND_SCENE[i] && PH[IND_SCENE[i]];
+  const scene = d.scene && PH[d.scene];
   const imgs = scene ? [] : d.recs.map(r => CUT(r[0])).filter(Boolean).slice(0, 3);
   const fl = [[ '58%', '12%' ], [ '8%', '64%' ], [ '74%', '58%' ]];
   el.innerHTML = `<div class="iscene">
@@ -2336,7 +2347,7 @@ function initUI() {
   $('#mtabs').innerHTML = MAC.map((m, i) => `<button class="mtab" role="tab" type="button" data-id="${m.id}" aria-selected="${i === 0}" tabindex="${i ? -1 : 0}"><i style="background:${m.a}"></i>${m.tab}</button>`).join('');
   const tabs = $$('.mtab');
   tabs.forEach((t, i) => { t.addEventListener('click', () => MACH && MACH.select(t.dataset.id)); t.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); MACH && MACH.select(n.dataset.id); } }); });
-  $('#flinks').innerHTML = P.map(p => `<a href="#print" data-pick="${p.id}">${p.name}</a>`).join('');
+  $('#flinks').innerHTML = PA.map(p => `<a href="#print" data-pick="${p.id}">${p.name}</a>`).join('');
   document.addEventListener('click', e => {
     const a = e.target.closest('#flinks [data-pick]'); if (a) { e.preventDefault(); openProduct(a.dataset.pick); return; }
     const q = e.target.closest('[data-enq]'); if (q) { const msg = $('#qMsg'); msg.value = q.dataset.enq + ' '; checkForm(); const go = () => { $('#contact').scrollIntoView({behavior:reduce ? 'auto' : 'smooth'}); setTimeout(() => $('#qName').focus({preventScroll:true}), 700); }; if (!burst.hidden) { closeBurst(); setTimeout(go, 700); } else go(); }
@@ -2350,23 +2361,23 @@ function initUI() {
     const L = ['Hello Shivay Screen Printer,', '', 'Name: ' + n, 'Firm: ' + f, 'Enquiry: ' + m];
     window.open(`https://wa.me/${WA}?text=${encodeURIComponent(L.join('\n'))}`, '_blank', 'noopener');
   });
-  const items = [...P.map(p => [p.name, p.short.split(' for ')[0].replace(/\.$/, ''), p.a, p.id]), ['Offset press', 'Fine detail on sheets', 'var(--c)', 'offset'], ['Flexo press', 'Roll labels at speed', 'var(--m)', 'flexo'], ['Screen printing', 'Bold, durable ink', 'var(--y)', 'screen']];
+  const items = [...PA.map(p => [p.name, p.short.split(' for ')[0].replace(/\.$/, ''), p.a, p.id]), ['Offset press', 'Fine detail on sheets', 'var(--c)', 'offset'], ['Flexo press', 'Roll labels at speed', 'var(--m)', 'flexo'], ['Screen printing', 'Bold, durable ink', 'var(--y)', 'screen']];
   const one = items.map((i, k) => `<div class="wl" style="--a:${i[2]};--d:${(k * .37 % 3).toFixed(2)}s"><i><img src="${CUT(i[3])}" alt=""></i><div><b>${i[0]}</b><small>${i[1]}</small></div></div>`).join('');
   $('#webRow').innerHTML = one + one;
   const yb = $('.years b'); let done = false;
   new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !done) { done = true; const t0 = performance.now(); const step = n => { const k = clamp((n - t0) / 1400), v = Math.round(25 * (1 - Math.pow(1 - k, 3))); yb.textContent = v + '+'; if (k < 1) requestAnimationFrame(step); }; reduce ? 0 : requestAnimationFrame(step); } }), {threshold:.4}).observe(yb);
-  // client logos: drop images/clients/<slug>.svg (or .png / .webp) next to index.html and it replaces the name
-  const CL = [['Hercules', 'hercules'], ['Avon Cycles', 'avon'], ['Rajdhani Oils', 'rajdhani'], ['Bonn', 'bonn'], ['Tata', 'tata'], ['Hero', 'hero'], ['Freeman', 'freeman']];
-  $('#cwall').innerHTML = CL.map(([n, k]) => `<div class="cl" data-logo="${k}"><span>${n}</span></div>`).join('');
-  $$('#cwall .cl').forEach(el => { const k = el.dataset.logo, n = el.textContent, ex = ['svg', 'png', 'webp']; let i = 0;
-    const tryNext = () => { if (i >= ex.length) return; const im = new Image(); im.alt = n; im.onload = () => { el.textContent = ''; el.appendChild(im); el.classList.add('has-logo'); }; im.onerror = tryNext; im.src = `images/clients/${k}.${ex[i++]}`; };
-    tryNext(); });
+  // client logos (A-Z): images/clients/<slug>.webp, sized so every logo carries the same visual weight
+  const CL = [['Avon Cycles', 'avon', 1.141], ['Bonn', 'bonn', 1.645], ['Cult.fit', 'cultfit', 3.023], ['Freemans', 'freemans', 5.814], ['Gang', 'gang', 4.091], ['Hercules', 'hercules', 4.536], ['Hero Cycles', 'hero', 3.032], ['Kross Bikes', 'kross', 3.509], ['Lifeline', 'lifeline', 2.555], ['Rajdhani', 'rajdhani', 2.5], ['Stylo Cycles', 'stylo', 2.855]];
+  $('#cwall').innerHTML = CL.map(([n, k, r]) => `<div class="cl has-logo" data-r="${r}"><img src="images/clients/${k}.webp" alt="${n}" loading="lazy" decoding="async"></div>`).join('');
+  const fitLogos = () => $$('#cwall .cl').forEach(el => { const im = el.querySelector('img'), r = +el.dataset.r, tw = el.clientWidth * .8, th = el.clientHeight * .68;
+    let h = Math.sqrt(tw * th * .4 / r); h = Math.min(h, th, tw / r); im.style.height = h.toFixed(1) + 'px'; im.style.width = (h * r).toFixed(1) + 'px'; });
+  fitLogos(); addEventListener('resize', fitLogos);
   $('#yr').textContent = new Date().getFullYear();
 }
 
 function initGrid() {
   const g = $('#pgrid');
-  g.innerHTML = P.map(p => `<button class="pcard" type="button" data-id="${p.id}" style="--a:${p.a};--as:${p.as}" aria-haspopup="dialog"><span class="pc-in"><span class="pc-media"><span class="pc-disc"></span><img src="${CUT(p.id)}" alt="${p.name}" loading="lazy"></span><span class="pc-txt"><b>${p.name}</b><small>${p.short}</small><em>View details</em></span></span></button>`).join('');
+  g.innerHTML = PA.map(p => `<button class="pcard" type="button" data-id="${p.id}" style="--a:${p.a};--as:${p.as}" aria-haspopup="dialog"><span class="pc-in"><span class="pc-media"><span class="pc-disc"></span><img src="${CUT(p.id)}" alt="${p.name}" loading="lazy"></span><span class="pc-txt"><b>${p.name}</b><small>${p.short}</small><em>View details</em></span></span></button>`).join('');
   g.addEventListener('click', e => { const c = e.target.closest('.pcard'); if (c) flipOpen(c); });
 }
 function flipOpen(card) { if (busy) return; card.classList.add('flip'); setTimeout(() => openBurst(card.dataset.id, card), reduce ? 0 : 430); }
@@ -2378,7 +2389,7 @@ function openProduct(id) { const c = $(`.pcard[data-id="${id}"]`); if (!c) retur
 function initVine() {
   const wrap = $('#vine'), list = $('#vineList'), svg = $('#vineSvg'), path = $('#vinePath'), ghost = $('#vineGhost'), leavesG = $('#vineLeaves'), grad = $('#vineG'), webs = ['#webEdge', '#webPaper', '#webLabels'].map(q => $(q));
   if (!wrap) return;
-  list.innerHTML = P.map((p, i) => `<li class="vitem ${i % 2 ? 'r' : 'l'}" style="--a:${p.a};--as:${p.as}">
+  list.innerHTML = PA.map((p, i) => `<li class="vitem ${i % 2 ? 'r' : 'l'}" style="--a:${p.a};--as:${p.as}">
     <button class="vbtn" type="button" data-pick="${p.id}" aria-label="${p.name}: see details">
       <span class="vdisc"><img src="${CUT(p.id)}" alt="" loading="lazy"></span>
       <span class="vtxt"><i>${String(i + 1).padStart(2, '0')}</i><b>${p.name}</b><span>${p.short}</span></span>
