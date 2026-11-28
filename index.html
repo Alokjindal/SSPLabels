@@ -333,7 +333,7 @@ address{font-style:normal;color:var(--ink-2);line-height:1.6}
 /* footer */
 footer{background:linear-gradient(180deg,rgba(255,255,255,0),#fff 30%);padding:70px 0 calc(36px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .fgrid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:36px}
-.flogo{width:230px}
+.flogo{width:230px;max-width:100%;height:auto;aspect-ratio:auto;object-fit:contain;display:block}
 footer h4{font-size:1rem;margin-bottom:12px}
 footer a{display:block;text-decoration:none;color:var(--ink-2);padding:3px 0}
 footer a:hover{color:var(--ink)}
@@ -1015,6 +1015,8 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
    To add or replace an image, drop a file with the slot's name into the images/ folder. Nothing else changes. */
 (function () {
   var DIR = 'images/', EXT = ['webp', 'png', 'jpg'];
+  // If images/ is not next to this file (single-file previews, emailed copies), load the same files from the GitHub repo via jsDelivr.
+  var CDN = ['https://cdn.jsdelivr.net/gh/alokjindal/ssplabels@main/images/', 'https://cdn.jsdelivr.net/gh/alokjindal/ssplabels@site-v10-images/images/'];
   // id: [label, width, height, kind, used in, alt text]
   var M = {
     cut_cosmetic:   ['Cosmetic labels, cut-out', 618, 900, 'cutout', 'Story slide 1, product card, industry scene, label strip', 'Cosmetic serum bottle with a premium printed label'],
@@ -1106,8 +1108,8 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
   function resolve(id) {
     var k = 0;
     (function next() {
-      if (k >= EXT.length) { if (EMB[id]) { RES[id] = EMB[id]; swap(id); } return; }
-      var url = DIR + id + '.' + EXT[k++], im = new Image();
+      if (k >= EXT.length + CDN.length) { if (EMB[id]) { RES[id] = EMB[id]; swap(id); } return; }
+      var url = k < EXT.length ? DIR + id + '.' + EXT[k] : CDN[k - EXT.length] + id + '.webp', im = new Image(); k++;
       im.onload = function () { RES[id] = url; swap(id); };
       im.onerror = next; im.src = url;
     })();
