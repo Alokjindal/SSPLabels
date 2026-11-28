@@ -72,13 +72,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .lockup span{display:flex;flex-direction:column;gap:5px}
 .lockup small{font-size:.62rem;letter-spacing:.32em;color:var(--ink-2);font-weight:600;line-height:1}
 .nav{display:flex;gap:2px;margin-left:auto}
-.nav a{text-decoration:none;font-size:.94rem;font-weight:600;padding:.5em .85em;border-radius:999px;color:var(--ink-2);transition:color .2s,background .2s}
+.nav a{white-space:nowrap;text-decoration:none;font-size:.94rem;font-weight:600;padding:.5em .85em;border-radius:999px;color:var(--ink-2);transition:color .2s,background .2s}
 .nav a:hover,.nav a.on{color:var(--ink);background:rgba(255,255,255,.9)}
 .bar .btn{padding:.72em 1.15em;font-size:.92rem}
 .menu-btn{display:none;margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:12px;width:46px;height:46px;cursor:pointer}
 .inkline{position:absolute;left:0;right:0;bottom:-1px;height:3px;display:flex;transform-origin:left;transform:scaleX(var(--p,0))}
 .inkline i{flex:1}.inkline i:nth-child(1){background:var(--c)}.inkline i:nth-child(2){background:var(--m)}.inkline i:nth-child(3){background:var(--y)}.inkline i:nth-child(4){background:var(--k)}
-@media (max-width:1020px){
+@media (max-width:1140px){
   .nav,.bar .btn{display:none}
   .menu-btn{display:grid;place-items:center}
   .nav.open{display:flex;flex-direction:column;position:absolute;top:100%;left:0;right:0;background:#fff;padding:10px 18px 20px;border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
@@ -489,7 +489,7 @@ h3{font-size:clamp(1.2rem,1.6vw,1.4rem);line-height:1.25}
 .outro .lead{margin:0 0 24px}
 .outro .cta{justify-content:flex-start}
 .skip{left:clamp(14px,2.4vw,34px);right:auto}
-@media (max-width:820px){
+@media (max-aspect-ratio:17/20){
   .intro{align-items:flex-end;padding:0 0 40px}
   .intro-txt{width:auto;margin:0 20px;text-align:center}
   .intro h1{max-width:none;font-size:clamp(2rem,8.4vw,2.8rem)}
@@ -748,7 +748,7 @@ h2{font-size:clamp(1.9rem,3vw,2.8rem)}
 /* ================= v12: hero buttons + consistency ================= */
 .intro .cta{justify-content:flex-start}
 .intro h1,.outro h2,.vine-head h2,.head h2{text-wrap:balance}
-@media (max-width:820px){
+@media (max-aspect-ratio:17/20){
   .intro{padding:0 0 max(64px,calc(9svh + env(safe-area-inset-bottom,0px)))}
   .intro-txt{flex:1 1 auto;width:auto;min-width:0}
   .intro h1{max-width:17ch;margin-left:auto;margin-right:auto}
@@ -1934,7 +1934,7 @@ function initHero() {
     return {p:V(lx, ly, D), l:V(lx, ly, 0)};
   }
   function buildKeys() {
-    const asp = W / H, mob = asp < .85;
+    const asp = W / H, mob = asp <= .85; // keep in step with the CSS (max-aspect-ratio:17/20)
     home = mob ? place(W / 2, 74 + (H * .46 - 74) / 2 + 10, .8, .24) : place(W * .735, (H + 74) / 2, .42, .5);
     const s = Math.max(W / 1280, H / 720), ox = (W - 1280 * s) / 2, oy = (H - 720 * s) / 2;
     const vw = 5.6 * W / (LBL.w * s), D = vw / (asp * tf), vh = D * tf, lx = -((ox + LBL.cx * s) / W - .5) * vw, ly = ((oy + LBL.cy * s) / H - .5) * vh;
